@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Object Detection</title>
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div style="position:relative; display: flex; padding: 10px">
+      <div class="container">
+        <!-- Left Part (70%) -->
+        <br />
+        <div class="header">Package Sorting Monitor Dashboard</div>
+        <div class="grid-container">
+          <div class="grid-container-row-top">
+            <div class="grid-item top">
+              <div class="placeholder-title">
+                <h2>Main Camera (LIVE)</h2>
+              </div>
+              <img
+                src="{{ url_for('video_feed') }}"
+                class="live-view"
+                alt="Live Video Feed"
+              />
+            </div>
+          <div class="grid-item top">
+    <div class="placeholder-title">
+        <h2>Label Camera (LIVE)</h2>
+    </div>
+    <img
+        src="{{ url_for('label_camera_feed') }}"
+        class="label-view"
+        alt="Label Camera"
+    />
+</div>
+          </div>
+
+          <div class="grid-container-row-bottom">
+            <div class="grid-item bottom">
+        <div class="placeholder-title">
+          <h2>Depth Map View</h2>
+        </div>
+        <img src="" id="depth_map_view" class="image-view" alt="Depth Map View">
+      </div>
+            <div class="grid-item bottom">
+        <div class="placeholder-title">
+          <h2>Object Detection View</h2>
+        </div>
+        <img src="" id="object_detection_view" class="image-view" alt="Object Detection View" >
+      </div>
+    </div>
+        </div>
+
+        <!-- Right Part (30%) -->
+      </div>
+      <div class="package-container">
+        <div id="detection_data">
+          <h2 class="system-status">System Status</h2>
+          <div class="data-block">
+            <h2>Package Lifting</h2>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <div>
+              <h2 class="system-status">Package Count</h2>
+              <div class="data-block">
+                <h2 id="package-count">06</h2>
+              </div>
+            </div>
+
+            <div>
+              <h2 class="system-status">End Factor</h2>
+              <div class="data-block">
+                <h2 id="end-factor">OFF</h2>
+              </div>
+            </div>
+
+            <div>
+              <h2 class="system-status">Flapper</h2>
+              <div class="data-block">
+                <h2 id="flapper-status">OFF</h2>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="system-status">Coordinates</h2>
+            <div class="data-block">
+              <h2 id="coordinates">X: 176 &nbsp; &nbsp; &nbsp; Y: 81 &nbsp; &nbsp; &nbsp; Z: 91</h2>
+            </div>
+          </div>
+        </div>
+        <div class="event-logger">
+          <div class="grid-item top">
+            <div class="placeholder-title">
+              <h2>Events</h2>
+            </div>
+            <div class="terminal-body">
+              <p>- Connecting to microcontroller.</p>
+              <p>- Connected to microcontroller... Done in 81ms.</p>
+              <p>- Initializing Robotic Arm... Done in 1.3sec</p>
+              <p>- Initializing Depth Estimation Algorithm</p>
+              <p>- System is Running and Ready...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+        <button id="detect_button" class="floating-button" onclick="triggerDetectPackage()">
+        Detect
+      </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <script>
+      var socket = io.connect(
+        "http://" + document.domain + ":" + location.port
+      );
+  function triggerDetectPackage() {
+        // Make an AJAX request to trigger object detection
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/detect_package", true);
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            // Process the response (if needed)
+          }
+        };
+        xhr.send();
+      }
+
+      socket.on("detection_data", function (data) {
+        // Parse the received JSON data
+        var displayData = JSON.parse(data);
+
+        // Update the data on the page
+        document.getElementById("package-count").textContent = displayData.packageCount;
+        document.getElementById("end-factor").textContent = displayData.endFactor;
+        document.getElementById("flapper-status").textContent = displayData.flapperStatus;
+        document.getElementById("coordinates").textContent = displayData.coordinates;
+
+         // Update Depth Map View
+        var depthMapImage = document.getElementById("depth_map_view");
+        depthMapImage.src = "data:image/jpeg;base64," + displayData.depth_map;
+
+        // Update Object Detection View
+        var objectDetectionImage = document.getElementById("object_detection_view");
+        objectDetectionImage.src = "data:image/jpeg;base64," + displayData.detected_object;
+
+      });
+    </script>
+  </body>
+</html>
